@@ -231,7 +231,8 @@ end
 -- XML attributes are strings, "false" would count as true
 local function to_bool(v)
 	if type(v) == "string" then
-		return v:lower() == "true"
+		v = v:lower()
+		return not (v == "" or v == "false" or v == "0" or v == "no")
 	end
 	return v
 end
