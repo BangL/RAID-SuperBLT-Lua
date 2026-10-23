@@ -144,5 +144,7 @@
 	"blt_infobtn_contact" : "CONTACT",
 
 	"blt_download_manager_header_mod" : "Download / Mod",
-	"blt_download_manager_header_download_status" : "Status"
+	"blt_download_manager_header_download_status" : "Status",
+
+	"dialog_does_not_own_heist" : "This host runs a custom map, joining it requires RAIDWW2-BeardLib"
 }
