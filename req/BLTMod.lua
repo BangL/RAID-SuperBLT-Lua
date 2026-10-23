@@ -74,7 +74,7 @@ end
 --- If not defined, it will try to look up on BLTMod class - LoadTagXML, LoadTagData, LoadTagShared
 --- @param options string|{ event: string, callback: function, data_callback: function, xml_callback: function }
 function BLTMod.AddTag(name, options)
-	table.insert(BLTMod._tags, options)
+	BLTMod._tags[name] = options
 end
 
 function BLTMod:LoadData()
@@ -192,7 +192,7 @@ function BLTMod:PostInit()
 		local xml_clbk = type(v) == "table" and v.xml_callback or self["_load_"..tag.."_xml"] or self["_load_"..tag]
 		local data_clbk = type(v) == "table" and v.data_callback or self["_load_"..tag.."_data"] or self["_load_"..tag]
 
-		local event = v or (type(v) == "table" and v.event) or nil
+		local event = type(v) == "table" and v.event or v
 
 		if event ~= "post_init" then
 			load_tags[tag] = function() end
@@ -228,6 +228,14 @@ function BLTMod:PostInit()
 	end
 end
 
+-- XML attributes are strings, "false" would count as true
+local function to_bool(v)
+	if type(v) == "string" then
+		return v:lower() == "true"
+	end
+	return v
+end
+
 function BLTMod:SetParams(data)
 	local merge = {
 		name = data.name,
@@ -238,9 +246,9 @@ function BLTMod:SetParams(data)
 		priority = tonumber(data.priority),
 		color = data.color,
 		image_path = data.image,
-		disable_safe_mode = data.disable_safe_mode,
-		undisablable = data.undisablable,
-		library = data.is_library,
+		disable_safe_mode = to_bool(data.disable_safe_mode),
+		undisablable = to_bool(data.undisablable),
+		library = to_bool(data.is_library),
 		min_sblt_version = data.min_sblt_version
 	}
 

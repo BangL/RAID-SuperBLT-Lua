@@ -38,5 +38,5 @@ function BLTAssetManager:CreateEntry(path, ext, file, options)
 		recode_type = self._recode[ext:key()]
 	}
 
-	blt:db_create_entry(ext, path, file, extra)
+	blt.db_create_entry(ext, path, file, extra)
 end
