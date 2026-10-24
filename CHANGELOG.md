@@ -5,6 +5,7 @@ the changes for the DLL are listed in their own changelog.
 Contributors other than maintainers are listed in parenthesis after specific changes.
 
 ## next
+- mod options list scrolls when there are too many mods
 - fixed some leaking globals from json-1.0.lua
 - readme points to the documentation of the DLL functions `dohttpreq` (now with methods, headers, bodies and cookie jars) and `clearhttpcookies`
 

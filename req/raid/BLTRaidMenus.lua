@@ -21,11 +21,19 @@ function BLTOptionsMenu:close()
 end
 
 function BLTOptionsMenu:_layout_list_menu()
-	local list_menu_options_params = {
-		h = 640,
-		w = 480,
+	-- fixed-height viewport above the back button, scrolls when there are too many mods
+	-- full width, so the scrollbar sits at the right screen edge
+	self._list_scrollable_area = self._root_panel:scrollable_area({
+		name = "blt_options_menu_list_scrollable_area",
+		h = 724,
+		w = self._root_panel:w(),
 		y = 144,
 		x = 0,
+		scroll_step = 33,
+		scrollbar_width = 8,
+	})
+	local list_menu_options_params = {
+		w = 480 - RaidGUIControlScrollableArea.SCROLLBAR_WIDTH,
 		name = "blt_options_menu_list",
 		selection_enabled = true,
 		vertical_spacing = 2,
@@ -33,10 +41,26 @@ function BLTOptionsMenu:_layout_list_menu()
 		on_item_clicked_callback = callback(self, self, "_on_list_menu_options_item_selected"),
 		data_source_callback = callback(self, self, "_list_menu_options_data_source"),
 		item_class = RaidGUIControlListItemMenu,
+		scrollable_area_ref = self._list_scrollable_area,
 		blt_can_sort_list = true
 	}
-	self.list_menu_options = self._root_panel:create_custom_control(RaidGUIControlSingleSelectList, list_menu_options_params)
+	self.list_menu_options = self._list_scrollable_area:get_panel():create_custom_control(RaidGUIControlSingleSelectList, list_menu_options_params)
+	-- mod menus get injected after creation, so re-fit the scroll area whenever the items are rebuilt
+	local area = self._list_scrollable_area
+	local orig_create_items = self.list_menu_options._create_items
+	self.list_menu_options._create_items = function(list, ...)
+		orig_create_items(list, ...)
+		area:setup_scroll_area()
+	end
+	area:setup_scroll_area()
 	self.list_menu_options:set_selected(true)
+end
+
+-- the list lives inside a scroll area now, so the menu component manager does not find it for input
+for _, func in ipairs({"move_up", "move_down", "confirm_pressed"}) do
+	BLTOptionsMenu[func] = function(self, ...)
+		return self.list_menu_options[func](self.list_menu_options, ...)
+	end
 end
 
 function BLTOptionsMenu:_list_menu_options_data_source()
