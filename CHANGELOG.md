@@ -4,7 +4,7 @@ This lists the changes between different versions of the RAID-SuperBLT basemod,
 the changes for the DLL are listed in their own changelog.
 Contributors other than maintainers are listed in parenthesis after specific changes.
 
-## next
+## 2.1.0
 - `BLTMenu:EnableScrolling()`: optional single scrollable column for menus with many items (default stays multi-column wrapping) (scrolling menus: items created before the call stay fixed above, `ignore_align` items stay fixed, mouse wheel does not switch steppers, keyboard navigation works)
 - `auto_select_on_hover` items deselect all other items of the menu (not just siblings) and deselect themselves when the mouse leaves
 - mod options list scrolls when there are too many mods
