@@ -226,7 +226,8 @@ _flush_assets = function(dres)
 		end
 
 		if not io.file_is_readable(path) then
-			error("Cannot load unreadable asset " .. path)
+			BLT:Log(LogLevel.ERROR, "[BLT] Cannot load unreadable asset " .. tostring(path))
+			goto continue
 		end
 
 		-- TODO a good way to log this
@@ -262,6 +263,8 @@ _flush_assets = function(dres)
 
 			i = i + 1
 		end
+
+		::continue::
 	end
 
 	_dynamic_unloaded_assets = {}

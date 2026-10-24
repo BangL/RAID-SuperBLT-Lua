@@ -70,9 +70,7 @@ function BLTUpdate:CheckForUpdates(clbk)
 	else
 		-- by superblt meta data
 		dohttpreq(self.host.meta, function(json_data, http_id, request_info)
-			if not string.is_nil_or_empty(json_data) then
-				self:clbk_got_update_data(clbk, json_data, http_id, request_info)
-			end
+			self:clbk_got_update_data(clbk, json_data, http_id, request_info)
 		end)
 	end
 end
@@ -271,12 +269,12 @@ function BLTUpdate:GetError()
 end
 
 function BLTUpdate:HasAssets()
-	for _, v2 in ipairs(self:GetParentMod()._xml_data) do
+	for _, v2 in ipairs(self:GetParentMod()._xml_data or {}) do
 		if v2.name ~= nil and v2.name == "assets" then
 			return true
 		end
 	end
-	return true
+	return false
 end
 
 function BLTUpdate:register_event_handler(id, callback)

@@ -198,6 +198,9 @@ function BLTDownloadManager:clbk_download_finished(p, data, http_id, request_inf
 			download.update:GetInstallFolder())
 
 		local cleanup = function(full)
+			if alive(download.coroutine) then
+				download.coroutine:parent():remove(download.coroutine)
+			end
 			io.remove_directory_and_files(temp_install_dir)
 			if full then
 				os.remove(file_path)
@@ -229,7 +232,12 @@ function BLTDownloadManager:clbk_download_finished(p, data, http_id, request_inf
 		set_state("extracting")
 		wait()
 
-		unzip(file_path, temp_install_dir)
+		if not unzip(file_path, temp_install_dir) then
+			BLT:Log(LogLevel.ERROR, string.format("[Downloads] Failed to extract '%s'", download_name))
+			set_state("failed")
+			cleanup(true)
+			return
+		end
 
 		-- Update extract_path, in case user renamed mod's folder
 		local folders = file.GetDirectories(temp_install_dir, true)

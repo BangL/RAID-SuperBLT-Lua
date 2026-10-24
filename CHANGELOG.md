@@ -6,6 +6,7 @@ Contributors other than maintainers are listed in parenthesis after specific cha
 
 ## next
 - fixed some leaking globals from json-1.0.lua
+- readme points to the documentation of the DLL functions `dohttpreq` (now with methods, headers, bodies and cookie jars) and `clearhttpcookies`
 
 ## 2.0.3
 - updated chinese translation by FR0Z3_N3.Borealis and Schordinger_Sig
