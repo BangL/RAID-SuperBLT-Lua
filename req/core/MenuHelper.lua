@@ -830,6 +830,9 @@ function MenuHelper:AddComponent(name, clss, args)
 				if this[u_name]._root_panel then
 					local final_list = this._active_controls[component]
 					this:_collect_controls(this[u_name]._root_panel, final_list)
+					if this[u_name]._scroll_panel then
+						this:_collect_controls(this[u_name]._scroll_panel, final_list)
+					end
 					if this[u_name]._additional_active_controls then
 						this:_collect_controls(this[u_name]:_additional_active_controls(), final_list)
 					end
