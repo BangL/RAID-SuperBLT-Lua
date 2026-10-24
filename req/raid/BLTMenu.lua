@@ -25,6 +25,7 @@ function BLTMenu:init(ws, fullscreen_ws, node, name, args)
 	self._description_label = self:Label({
 		name = "bltmenu_description_label",
 		text = "",
+		parent = self._root_panel,
 		ignore_align = true,
 		color = tweak_data.gui.colors.raid_dirty_white,
 		font = tweak_data.gui.fonts.din_compressed,
@@ -60,6 +61,8 @@ end
 function BLTMenu:Clear()
 	self._root_panel:clear()
 	self._root_panel.ctrls = {}
+	self._scroll_area = nil
+	self._scroll_panel = nil
 end
 
 function BLTMenu:update(t, dt)
@@ -85,6 +88,9 @@ function BLTMenu:Finalize(panel)
 			self:SetPage(nil, item)
 		end
 	end
+	if self._scroll_panel and panel == self._root_panel then
+		self:Finalize(self._scroll_panel)
+	end
 end
 
 --Hides only items that have the 'page' parameter.
@@ -106,26 +112,49 @@ function BLTMenu:SetPage(page, tabs)
 end
 
 function BLTMenu:GetItem(name, deep, panel)
+	if not panel and self._scroll_panel then
+		local item = self:GetItem(name, deep, self._scroll_panel)
+		if item then
+			return item
+		end
+	end
 	panel = panel or self._root_panel
 	for _, item in pairs(panel.ctrls) do
-		if item:name() == name then
+		if self:_ItemName(item) == name then
 			return item
 		elseif item.ctrls and deep then
-			return self:GetItem(name, deep, item)
+			local found = self:GetItem(name, deep, item)
+			if found then
+				return found
+			end
 		end
 	end
 	return nil
 end
 
+-- ctrls can hold the inner panel of an item, and RaidGUIPanel has no name()
+function BLTMenu:_ItemName(item)
+	return item.name and item:name() or item._params and item._params.name
+end
+
 
 function BLTMenu:GetPanel(name, deep, panel)
+	if not panel and self._scroll_panel then
+		local item = self:GetPanel(name, deep, self._scroll_panel)
+		if item then
+			return item
+		end
+	end
 	panel = panel or self._root_panel
 	for _, item in pairs(panel.ctrls) do
 		if item.ctrls then
-			if item:name() == name then
+			if self:_ItemName(item) == name then
 				return item
 			elseif deep then
-				return self:GetItem(name, deep, item)
+				local found = self:GetPanel(name, deep, item)
+				if found then
+					return found
+				end
 			end
 		end
 	end
@@ -152,6 +181,7 @@ function BLTMenu:Align(panel)
 		return
 	end
 
+	local scrolling = self._scroll_panel and panel == self._scroll_panel
 	local x = 0
 	local y = 0
 	local next_col_x = 0
@@ -162,7 +192,8 @@ function BLTMenu:Align(panel)
 			local y_offset = item._params.y_offset or self.default_y_offset
 
 			-- if not first item in column and increasing screen size...
-			if (y > 0) and (y + y_offset + item:h()) > (panel:h() - (panel.is_root_panel and 32 or 0)) then
+			-- (scrolling menus keep a single column instead)
+			if not scrolling and (y > 0) and (y + y_offset + item:h()) > (panel:h() - (panel.is_root_panel and 32 or 0)) then
 				x = next_col_x -- ...shift column and...
 				y = 0 -- ...set to top
 			end
@@ -178,6 +209,60 @@ function BLTMenu:Align(panel)
 			y = item:bottom()
 
 		end
+	end
+	if scrolling then
+		self._scroll_area:setup_scroll_area()
+	end
+end
+
+-- Opt-in: puts all items into a single scrollable column instead of wrapping them into
+-- multiple columns. Call it in PreInit/Init before creating the scrolling items (and again after Clear()).
+-- Items created earlier (e.g. the title) stay fixed above the scroll area.
+-- Optional params: x, y, w, h, scroll_step
+function BLTMenu:EnableScrolling(params)
+	if self._scroll_area then
+		return
+	end
+	params = params or {}
+	local root = self._root_panel
+	-- items created before this call (e.g. a title) stay fixed, the scroll area starts below them
+	local top = 0
+	for _, item in pairs(root.ctrls) do
+		if item:visible() and not item._params.ignore_align then
+			top = math.max(top, item:bottom())
+		end
+	end
+	local y = params.y or top
+	self._scroll_area = root:scrollable_area({
+		name = "bltmenu_scroll_area",
+		x = params.x or 0,
+		y = y,
+		w = params.w or root:w(),
+		h = params.h or (root:h() - 100 - y),
+		scroll_step = params.scroll_step or 33,
+		scrollbar_width = 8,
+	})
+	self._scroll_panel = self._scroll_area:get_panel()
+	self._scroll_panel.ctrls = {}
+end
+
+-- Scrolls the item into view (no-op without scrolling or if everything fits)
+function BLTMenu:ScrollToItem(item)
+	local area = self._scroll_area
+	if not (area and area._scrolling_enabled) then
+		return
+	end
+	local inner = area._inner_panel
+	local view_h = area._object:h()
+	local y = inner:y()
+	if item:y() + y < 0 then
+		y = -item:y()
+	elseif item:bottom() + y > view_h then
+		y = view_h - item:bottom()
+	end
+	if y ~= inner:y() then
+		inner:set_y(y)
+		area:move_scrollbar_manually()
 	end
 end
 
@@ -209,7 +294,8 @@ function BLTMenu:BasicItemData(params, no_clone, typ)
 	else
 		params.text = ""
 	end
-	params.parent = params.parent or self._root_panel
+	-- items with ignore_align have fixed coordinates, so they stay put instead of scrolling
+	params.parent = params.parent or (not params.ignore_align and self._scroll_panel) or self._root_panel
 	params.is_blt = true
 	params.ignore_align = not not params.ignore_align
 	params.w = (params.w or 512) + (typ == "slider" and 64 or 0)
@@ -308,6 +394,19 @@ function BLTMenu:CreateSimple(typ, params, create_data)
 			end
 			self.auto_route_last_control = item
 		end
+		if self._scroll_panel and parent == self._scroll_panel then
+			self:_suppress_mouse_scroll(item)
+		end
+		if self._scroll_panel and parent == self._scroll_panel and item.set_selected then
+			local set_selected = item.set_selected
+			item.set_selected = function(this, value, ...)
+				local result = set_selected(this, value, ...)
+				if value then
+					self:ScrollToItem(this)
+				end
+				return result
+			end
+		end
 		if data.auto_select_on_hover and item.set_selected then
 			self:_bind_auto_select_on_hover(item, parent)
 			if data.desc then
@@ -315,6 +414,31 @@ function BLTMenu:CreateSimple(typ, params, create_data)
 			end
 		end
 		return item
+	end
+end
+
+-- the mouse wheel scrolls the menu, it must not also switch steppers/multichoices (incl. their inner controls)
+function BLTMenu:_suppress_mouse_scroll(control, visited)
+	visited = visited or {}
+	if type(control) ~= "table" or visited[control] then
+		return
+	end
+	visited[control] = true
+	for _, func in ipairs({"on_mouse_scroll_up", "on_mouse_scroll_down"}) do
+		if control[func] then
+			control[func] = function()
+				return false
+			end
+		end
+	end
+	self:_suppress_mouse_scroll(control._stepper, visited)
+	for _, child in pairs(control._controls or {}) do
+		self:_suppress_mouse_scroll(child, visited)
+	end
+	for _, panel in ipairs({control._stepper_panel, control._object}) do
+		if type(panel) == "table" and panel._controls then
+			self:_suppress_mouse_scroll(panel, visited)
+		end
 	end
 end
 
@@ -357,7 +481,8 @@ function BLTMenu:_bind_auto_select_on_hover(item, parent)
 	end
 	item._on_mouse_enter_callback = function(button, _data)
 		if item and item.set_selected and parent._controls then
-			for _, ctl in ipairs(parent._controls) do
+			-- all items, not just siblings: fixed items (ignore_align) live outside the scroll panel
+			for _, ctl in ipairs(self._all_ctrls) do
 				if ctl.set_selected and (ctl ~= item) then
 					ctl:set_selected(false)
 				end
@@ -366,6 +491,16 @@ function BLTMenu:_bind_auto_select_on_hover(item, parent)
 		end
 		if item._on_mouse_enter_callback_no_auto_select then
 			item._on_mouse_enter_callback_no_auto_select(button, _data)
+		end
+	end
+	-- leaving an item deselects it, else it stays highlighted while the mouse rests on empty space
+	local exit_callback = item._on_mouse_exit_callback
+	item._on_mouse_exit_callback = function(...)
+		if item.set_selected then
+			item:set_selected(false)
+		end
+		if exit_callback then
+			return exit_callback(...)
 		end
 	end
 end
