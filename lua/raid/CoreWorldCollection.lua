@@ -56,8 +56,12 @@ end
 local function release_elements(elements)
 	-- user data of removed nav links in the registry
 	for key, value in pairs(debug.getregistry()) do
-		if type(key) == "number" and type(value) == "table" and elements[value.element] then
-			value.element = nil
+		if type(key) == "number" and type(value) == "table" then
+			-- raw, other tables of the registry have metatables of their own
+			local element = rawget(value, "element")
+			if element ~= nil and elements[element] then
+				rawset(value, "element", nil)
+			end
 		end
 	end
 
