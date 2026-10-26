@@ -324,6 +324,14 @@ Hooks:Add("BLTOnSaveData", "BLTOnSaveData.BLTKeybindsManager", function(save_dat
 			table.insert(save_data.keybinds, data)
 		end
 	end
+
+	-- Keep binds of mods that are missing or disabled, so they survive until the mod is back
+	-- (entries of registered binds are stale leftovers, the registered bind saves itself)
+	for _, bind_data in ipairs(BLT.Keybinds._potential_keybinds) do
+		if not BLT.Keybinds:get_keybind(bind_data.id) then
+			table.insert(save_data.keybinds, bind_data)
+		end
+	end
 end)
 
 --------------------------------------------------------------------------------
