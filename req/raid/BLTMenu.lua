@@ -5,6 +5,7 @@ require("lib/managers/menu/raid_menu/controls/raidguicontrolstepper")
 
 BLT:Require("req/raid/BLTGUIControlButton")
 BLT:Require("req/raid/BLTGUIControlMenuButton")
+BLT:Require("req/raid/BLTGUIControlNewMenuButton")
 BLT:Require("req/raid/BLTGUIControlStepperIconsSimple")
 BLT:Require("req/raid/BLTGUIControlStepperIcons")
 
@@ -546,6 +547,14 @@ end
 
 function BLTMenu:MenuButton(params)
 	return BLTMenu.CreateSimple(self, BLTGUIControlMenuButton, params)
+end
+
+-- main-menu style entry; optional params: icon (gui icon id), w (default 480), h (default 64)
+function BLTMenu:NewMenuButton(params)
+	params = clone(params)
+	params.w = params.w or 480
+	params.h = params.h or 64
+	return BLTMenu.CreateSimple(self, BLTGUIControlNewMenuButton, params, {no_clone = true})
 end
 
 function BLTMenu:CreateSimpleLabel(typ, params)

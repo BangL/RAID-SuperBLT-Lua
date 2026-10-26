@@ -4,6 +4,15 @@ This lists the changes between different versions of the RAID-SuperBLT basemod,
 the changes for the DLL are listed in their own changelog.
 Contributors other than maintainers are listed in parenthesis after specific changes.
 
+## 2.2.0
+- mod profiles: named sets of enabled mods, switch/create/rename/delete below the mod list (stored in `blt_data.txt`, the active profile follows the current state)
+- search field above the download manager button: filters the mod list by name, description and author
+- disabled mods are sorted to the top of the mod list
+- keyboard/controller navigation in the mods menu: list <-> info buttons <-> download manager <-> search <-> profile stepper
+- `BLTMenu:NewMenuButton(params)`: main-menu style entry (`icon`, `w`, `h`) as a standalone menu item
+- keybinds menu scrolls (header stays fixed)
+- keybinds of missing or disabled mods are no longer dropped from the save data
+
 ## 2.1.0
 - `BLTMenu:EnableScrolling()`: optional single scrollable column for menus with many items (default stays multi-column wrapping) (scrolling menus: items created before the call stay fixed above, `ignore_align` items stay fixed, mouse wheel does not switch steppers, keyboard navigation works)
 - `auto_select_on_hover` items deselect all other items of the menu (not just siblings) and deselect themselves when the mouse leaves

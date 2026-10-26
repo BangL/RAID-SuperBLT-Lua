@@ -71,13 +71,14 @@ BLTKeybindsMenu = BLTKeybindsMenu or blt_class(BLTMenu)
 function BLTKeybindsMenu:Init(root)
 	self:Title({text = "menu_header_options_main_screen_name"})
 	self:SubTitle({text = "blt_options_menu_keybinds"})
+	self:EnableScrolling() -- header stays fixed, everything below scrolls
 	local last_mod
 	self:AutoBindNamedControlsBegin()
 	for i, bind in ipairs(BLT.Keybinds:keybinds()) do
 		if bind:IsActive() and bind:ShowInMenu() then
 			-- Separate keybinds by mod
 			if last_mod ~= bind:ParentMod() then
-				self:Label({text = bind:ParentMod():GetName(), localize = false})
+				self:Label({text = bind:ParentMod():GetName(), localize = false, y_offset = 16})
 			end
 			self:KeyBind({
 				name = bind:Id(),

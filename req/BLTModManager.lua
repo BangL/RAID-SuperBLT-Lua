@@ -74,6 +74,8 @@ function BLTModManager:SetModsList(mods_list)
 		end
 	end
 
+	self:_EnsureProfiles()
+
 	-- Post init mods
 	for _, mod in pairs(self.mods) do
 		mod:PostInit()
@@ -83,6 +85,111 @@ function BLTModManager:SetModsList(mods_list)
 	for i, mod in ipairs(self.mods) do
 		mod:Setup()
 	end
+end
+
+--------------------------------------------------------------------------------
+-- Profiles: named sets of mod enabled states, stored in blt_data.txt.
+-- The active profile follows the current state (updated on every save).
+--------------------------------------------------------------------------------
+
+---@return table<string, boolean> @mod id -> enabled
+function BLTModManager:_CaptureProfile()
+	local mods = {}
+	for _, mod in ipairs(self.mods or {}) do
+		mods[mod:GetId()] = mod:IsEnabled() and true or false
+	end
+	return mods
+end
+
+function BLTModManager:_EnsureProfiles()
+	local save_data = BLT.save_data
+	if type(save_data.profiles) ~= "table" or #save_data.profiles == 0 then
+		save_data.profiles = { { mods = self:_CaptureProfile() } }
+	end
+	save_data.profile_index = math.min(math.max(save_data.profile_index or 1, 1), #save_data.profiles)
+end
+
+---@return table[] @list of { name = string?, mods = table }
+function BLTModManager:Profiles()
+	self:_EnsureProfiles()
+	return BLT.save_data.profiles
+end
+
+function BLTModManager:ProfileIndex()
+	self:_EnsureProfiles()
+	return BLT.save_data.profile_index
+end
+
+---@param index integer?
+---@return string
+function BLTModManager:ProfileName(index)
+	index = index or self:ProfileIndex()
+	local profile = self:Profiles()[index]
+	return profile and profile.name or managers.localization:text("blt_default_profile_name", { number = tostring(index) })
+end
+
+---@param name string
+---@param index integer?
+function BLTModManager:SetProfileName(name, index)
+	local profile = self:Profiles()[index or self:ProfileIndex()]
+	if profile then
+		profile.name = (name and name ~= "") and name or nil
+	end
+end
+
+---Stores the current state into the active profile
+function BLTModManager:SaveProfile()
+	local profiles = self:Profiles()
+	profiles[self:ProfileIndex()].mods = self:_CaptureProfile()
+end
+
+---Creates a copy of a profile
+---@return integer @index of the new profile
+function BLTModManager:CreateProfile(based_on)
+	self:SaveProfile()
+	local profiles = self:Profiles()
+	local profile = deep_clone(profiles[based_on or self:ProfileIndex()])
+	profile.name = nil
+	table.insert(profiles, profile)
+	return #profiles
+end
+
+---Saves the active profile and applies the given one
+---@param index integer
+function BLTModManager:SwitchProfile(index)
+	local profiles = self:Profiles()
+	if index < 1 or index > #profiles then
+		return false
+	end
+	if index ~= self:ProfileIndex() then
+		self:SaveProfile()
+	end
+	BLT.save_data.profile_index = index
+	for _, mod in ipairs(self.mods or {}) do
+		local enabled = profiles[index].mods[mod:GetId()]
+		if enabled ~= nil then
+			mod:SetEnabled(enabled)
+		end
+	end
+	return true
+end
+
+---Deletes a profile (never the last one)
+function BLTModManager:DeleteProfile(index)
+	local profiles = self:Profiles()
+	local current = self:ProfileIndex()
+	index = index or current
+	if #profiles < 2 or index < 1 or index > #profiles then
+		return false
+	end
+	if index == current then
+		self:SwitchProfile(index == 1 and 2 or index - 1)
+		-- index shifts down by one after the removal below
+		current = (index == 1) and 2 or index - 1
+	end
+	table.remove(profiles, index)
+	BLT.save_data.profile_index = (current > index) and current - 1 or current
+	return true
 end
 
 function BLTModManager:IsExcludedDirectory(directory)
@@ -177,6 +284,8 @@ end
 
 Hooks:Add("BLTOnSaveData", "BLTOnSaveData.BLTModManager", function(save_data)
 	save_data.mods = {}
+
+	BLT.Mods:SaveProfile()
 
 	local path = BLTModManager.Constants:ModManagerWrenDisabledModsFile()
 
