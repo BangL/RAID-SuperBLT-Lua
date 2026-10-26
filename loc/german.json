@@ -71,6 +71,9 @@
 	"blt_update_later" : "Später aktualisieren",
 	"blt_update_now" : "Jetzt aktualisieren",
 	
+	"blt_search" : "Suche",
+	"blt_default_profile_name" : "Profil $number",
+	"blt_profile_delete" : "Soll das Mod-Profil \"$profile\" wirklich gelöscht werden?",
 	"blt_download_manager" : "Download Manager",
 	"blt_downloads_available_sin" : "$COUNT Update verfügbar.",
 	"blt_downloads_available_plu" : "$COUNT Updates verfügbar.",
