@@ -592,7 +592,7 @@ function BLTModsGui:_profile_rename_done(apply)
 		self._profile_name_button:set_selected(true)
 	end
 	if apply then
-		BLT.Mods:SetProfileName(name:sub(1, 20))
+		BLT.Mods:SetProfileName(utf8.sub(name, 1, 20))
 	end
 	self:_refresh_profile_stepper()
 end
