@@ -70,7 +70,6 @@
             <post hook_id="lib/managers/menu/raid_menu/controls/raidguicontrolkeybind" :script_path="RaidGUIControlKeyBind.lua"/>
             <post hook_id="lib/setups/setup" :script_path="AddCallOnNextUpdate.lua"/>
             <post hook_id="lib/managers/menu/raid_menu/controls/raidguipanel" :script_path="RaidGUIPanel.lua"/>
-            <post hook_id="core/lib/managers/coreworldcollection" :script_path="CoreWorldCollection.lua"/>
         </group>
         <group script_path="req/raid/">
             <post hook_id="lib/managers/menu/menucomponentmanager" :script_path="PD2Insert.lua"/>
